@@ -1,0 +1,48 @@
+name: Notion-Obsidian Sync
+
+on:
+  # スケジュール実行（10分間隔）
+  schedule:
+    - cron: '*/10 * * * *'
+  
+  # ファイル変更時の実行
+  push:
+    branches: [ main ]
+    paths: [ 'obsidian-vault/**/*.md' ]
+  
+  # 手動実行
+  workflow_dispatch:
+
+jobs:
+  sync-and-analyze:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+    
+    - name: Run analysis
+      env:
+        NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+        NOTION_DATA_SOURCE_ID: ${{ secrets.NOTION_DATA_SOURCE_ID }}
+        OBSIDIAN_VAULT_PATH: ./obsidian-vault
+      run: |
+        python -m sync_system.github_actions_runner
+    
+    - name: Commit results
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        git commit -m "Update analysis results" || exit 0
+        git push

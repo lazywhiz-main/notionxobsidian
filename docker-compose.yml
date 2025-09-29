@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  analysis-engine:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - NOTION_TOKEN=${NOTION_TOKEN}
+      - OBSIDIAN_PATH=${OBSIDIAN_PATH}
+      - ANALYSIS_INTERVAL=${ANALYSIS_INTERVAL:-300}
+      - SYNC_INTERVAL=${SYNC_INTERVAL:-60}
+      - SIMILARITY_THRESHOLD=${SIMILARITY_THRESHOLD:-0.8}
+      - CONFIDENCE_THRESHOLD=${CONFIDENCE_THRESHOLD:-0.7}
+    volumes:
+      - ./obsidian_vault:/app/obsidian_vault
+      - ./logs:/app/logs
+      - ./config:/app/config
+    restart: unless-stopped
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  redis_data:
